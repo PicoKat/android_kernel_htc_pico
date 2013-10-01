@@ -1678,6 +1678,7 @@ static void pico_ts_himax_reset(void)
 static int pico_ts_himax_loadSensorConfig(struct i2c_client *client, struct himax_i2c_platform_data **pdata, struct himax_config_init_api *i2c_api);
 
 struct himax_i2c_platform_data pico_ts_himax_data[] = {
+	/* this is the config that is actually used */
 	{
 		.slave_addr = 0x90,
 		.version = 0x00,
@@ -1927,12 +1928,12 @@ static int pico_ts_himax_loadSensorConfig(struct i2c_client *client, struct hima
 
 start:
 	if (!pdata || !client || !i2c_api) {
-		printk(KERN_ERR "[TOUCH_ERR]%s: Necessary parameters are null!\n", __func__);
+		printk(KERN_ERR "[TS]%s: Necessary parameters are null!\n", __func__);
 		return -1;
 	}
 	result = i2c_api->i2c_himax_write_command(client, 0x81);
 	if (result < 0) {
-		printk(KERN_INFO "No Himax chip inside\n");
+		printk(KERN_INFO "[TS]%s: No Himax chip inside\n", __func__);
 		return -EIO;
 	} else {
 		hr_msleep(240);
@@ -1968,11 +1969,11 @@ start:
 			printk(KERN_INFO "%s: Cando touch window detected.\n", __func__);
 		}
 		if (i == sizeof(pico_ts_himax_data)/sizeof(struct himax_i2c_platform_data)) {
-			printk(KERN_ERR "[TOUCH_ERR]%s: Couldn't find the matched profile!\n", __func__);
+			printk(KERN_ERR "[TS]%s: Couldn't find the matched profile!\n", __func__);
 			return -1;
 		}
 
-		printk(KERN_INFO "%s: start initializing Sensor configs\n", __func__);
+		printk(KERN_INFO "[TS]%s: start initializing Sensor configs\n", __func__);
 	}
 
 	do {
@@ -1986,7 +1987,6 @@ start:
 			return -EIO;
 		}
 
-		/* Start Check Sum */
 		i2c_api->i2c_himax_master_write(client, (*pdata)->c48 , sizeof((*pdata)->c48));
 		i2c_api->i2c_himax_master_write(client, (*pdata)->c45 , sizeof((*pdata)->c45));
 
