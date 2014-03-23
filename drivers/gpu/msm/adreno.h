@@ -69,9 +69,6 @@ enum adreno_gpurev {
 	ADRENO_REV_A205 = 205,
 	ADRENO_REV_A220 = 220,
 	ADRENO_REV_A225 = 225,
-	ADRENO_REV_A305 = 305,
-	ADRENO_REV_A320 = 320,
-	ADRENO_REV_A330 = 330,
 };
 
 struct adreno_gpudev;
@@ -106,10 +103,6 @@ struct adreno_device {
 };
 
 struct adreno_gpudev {
-	/*
-	 * These registers are in a different location on A3XX,  so define
-	 * them in the structure and use them as variables.
-	 */
 	unsigned int reg_rbbm_status;
 	unsigned int reg_cp_pfp_ucode_data;
 	unsigned int reg_cp_pfp_ucode_addr;
@@ -157,7 +150,6 @@ struct adreno_recovery_data {
 };
 
 extern struct adreno_gpudev adreno_a2xx_gpudev;
-extern struct adreno_gpudev adreno_a3xx_gpudev;
 
 /* A2XX register sets defined in adreno_a2xx.c */
 extern const unsigned int a200_registers[];
@@ -166,16 +158,6 @@ extern const unsigned int a225_registers[];
 extern const unsigned int a200_registers_count;
 extern const unsigned int a220_registers_count;
 extern const unsigned int a225_registers_count;
-
-/* A3XX register set defined in adreno_a3xx.c */
-extern const unsigned int a3xx_registers[];
-extern const unsigned int a3xx_registers_count;
-
-extern const unsigned int a3xx_hlsq_registers[];
-extern const unsigned int a3xx_hlsq_registers_count;
-
-extern const unsigned int a330_registers[];
-extern const unsigned int a330_registers_count;
 
 extern unsigned int hang_detect_regs[];
 extern const unsigned int hang_detect_regs_count;
@@ -247,26 +229,6 @@ static inline int adreno_is_a22x(struct adreno_device *adreno_dev)
 static inline int adreno_is_a2xx(struct adreno_device *adreno_dev)
 {
 	return (adreno_dev->gpurev <= 299);
-}
-
-static inline int adreno_is_a3xx(struct adreno_device *adreno_dev)
-{
-	return (adreno_dev->gpurev >= 300);
-}
-
-static inline int adreno_is_a305(struct adreno_device *adreno_dev)
-{
-	return (adreno_dev->gpurev == ADRENO_REV_A305);
-}
-
-static inline int adreno_is_a320(struct adreno_device *adreno_dev)
-{
-	return (adreno_dev->gpurev == ADRENO_REV_A320);
-}
-
-static inline int adreno_is_a330(struct adreno_device *adreno_dev)
-{
-	return (adreno_dev->gpurev == ADRENO_REV_A330);
 }
 
 static inline int adreno_rb_ctxtswitch(unsigned int *cmd)
@@ -375,12 +337,6 @@ static inline int adreno_add_idle_cmds(struct adreno_device *adreno_dev,
 
 	*cmds++ = cp_type3_packet(CP_WAIT_FOR_IDLE, 1);
 	*cmds++ = 0x00000000;
-
-	if ((adreno_dev->gpurev == ADRENO_REV_A305) ||
-		(adreno_dev->gpurev == ADRENO_REV_A320)) {
-		*cmds++ = cp_type3_packet(CP_WAIT_FOR_ME, 1);
-		*cmds++ = 0x00000000;
-	}
 
 	return cmds - start;
 }

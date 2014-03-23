@@ -35,7 +35,6 @@
 #include "adreno_pm4types.h"
 
 #include "a2xx_reg.h"
-#include "a3xx_reg.h"
 
 #define DRIVER_VERSION_MAJOR   3
 #define DRIVER_VERSION_MINOR   1
@@ -128,7 +127,6 @@ static struct adreno_device device_3d0 = {
  * kernel log.
  */
 unsigned int hang_detect_regs[] = {
-	A3XX_RBBM_STATUS,
 	REG_CP_RB_RPTR,
 	REG_CP_IB1_BASE,
 	REG_CP_IB1_BUFSZ,
@@ -192,17 +190,6 @@ static const struct {
 	{ ADRENO_REV_A225, 2, 2, ANY_ID, ANY_ID,
 		"a225_pm4.fw", "a225_pfp.fw", &adreno_a2xx_gpudev,
 		1536, 768, 3, SZ_512K, 0x225011, 0x225002 },
-	/* A3XX doesn't use the pix_shader_start */
-	{ ADRENO_REV_A305, 3, 0, 5, ANY_ID,
-		"a300_pm4.fw", "a300_pfp.fw", &adreno_a3xx_gpudev,
-		512, 0, 2, SZ_256K, 0x3FF037, 0x3FF016 },
-	/* A3XX doesn't use the pix_shader_start */
-	{ ADRENO_REV_A320, 3, 2, ANY_ID, ANY_ID,
-		"a300_pm4.fw", "a300_pfp.fw", &adreno_a3xx_gpudev,
-		512, 0, 2, SZ_512K, 0x3FF037, 0x3FF016 },
-	{ ADRENO_REV_A330, 3, 3, 0, 0,
-		"a330_pm4.fw", "a330_pfp.fw", &adreno_a3xx_gpudev,
-		512, 0, 2, SZ_1M, NO_VER, NO_VER },
 };
 
 static irqreturn_t adreno_irq_handler(struct kgsl_device *device)
@@ -550,21 +537,6 @@ static void adreno_setstate(struct kgsl_device *device,
 }
 
 static unsigned int
-a3xx_getchipid(struct kgsl_device *device)
-{
-	struct kgsl_device_platform_data *pdata =
-		kgsl_device_get_drvdata(device);
-
-	/*
-	 * All current A3XX chipids are detected at the SOC level. Leave this
-	 * function here to support any future GPUs that have working
-	 * chip ID registers
-	 */
-
-	return pdata->chipid;
-}
-
-static unsigned int
 a2xx_getchipid(struct kgsl_device *device)
 {
 	unsigned int chipid = 0;
@@ -611,18 +583,7 @@ a2xx_getchipid(struct kgsl_device *device)
 static unsigned int
 adreno_getchipid(struct kgsl_device *device)
 {
-	struct kgsl_device_platform_data *pdata =
-		kgsl_device_get_drvdata(device);
-
-	/*
-	 * All A3XX chipsets will have pdata set, so assume !pdata->chipid is
-	 * an A2XX processor
-	 */
-
-	if (pdata->chipid == 0 || ADRENO_CHIPID_MAJOR(pdata->chipid) == 2)
 		return a2xx_getchipid(device);
-	else
-		return a3xx_getchipid(device);
 }
 
 static inline bool _rev_match(unsigned int id, unsigned int entry)
@@ -1093,9 +1054,6 @@ err:
 static int
 adreno_ocmem_gmem_malloc(struct adreno_device *adreno_dev)
 {
-	if (!adreno_is_a330(adreno_dev))
-		return 0;
-
 	/* OCMEM is only needed once, do not support consective allocation */
 	if (adreno_dev->ocmem_hdl != NULL)
 		return 0;
@@ -1114,9 +1072,6 @@ adreno_ocmem_gmem_malloc(struct adreno_device *adreno_dev)
 static void
 adreno_ocmem_gmem_free(struct adreno_device *adreno_dev)
 {
-	if (!adreno_is_a330(adreno_dev))
-		return;
-
 	if (adreno_dev->ocmem_hdl == NULL)
 		return;
 
@@ -1258,12 +1213,6 @@ static int adreno_start(struct kgsl_device *device, unsigned int init_ram)
 	/* Assign correct RBBM status register to hang detect regs
 	 */
 	hang_detect_regs[0] = adreno_dev->gpudev->reg_rbbm_status;
-
-	/* Add A3XX specific registers for hang detection */
-	if (adreno_is_a3xx(adreno_dev)) {
-		hang_detect_regs[6] = A3XX_RBBM_PERFCTR_SP_7_LO;
-		hang_detect_regs[7] = A3XX_RBBM_PERFCTR_SP_7_HI;
-	}
 
 	status = kgsl_mmu_start(device);
 	if (status)
