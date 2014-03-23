@@ -500,6 +500,7 @@ adreno_ringbuffer_addcmds(struct adreno_ringbuffer *rb,
 				unsigned int flags, unsigned int *cmds,
 				int sizedwords, uint32_t timestamp)
 {
+	struct adreno_device *adreno_dev = ADRENO_DEVICE(rb->device);
 	unsigned int *ringcmds;
 	unsigned int total_sizedwords = sizedwords;
 	unsigned int i;
